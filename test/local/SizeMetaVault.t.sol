@@ -26,7 +26,6 @@ contract SizeMetaVaultTest is BaseTest {
 
     function test_SizeMetaVault_RemoveStrategyValidation() public {
         vm.startPrank(strategist);
-        sizeMetaVault.addStrategy(address(1));
         vm.expectRevert(abi.encodeWithSelector(SizeMetaVault.NULL_ADDRESS.selector));
         sizeMetaVault.removeStrategy(address(0));
     }
@@ -51,6 +50,15 @@ contract SizeMetaVaultTest is BaseTest {
         vm.prank(strategist);
         vm.expectRevert(abi.encodeWithSelector(SizeMetaVault.InvalidStrategy.selector,address(1)));
         sizeMetaVault.rebalance(cashStrategyVault, IStrategy(address(1)), amount);
+
+        amount = 50e6;
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SizeMetaVault.InsufficientAssets.selector, cashAssetsBefore, cashStrategyDeadAssets, amount
+            )
+        );
+        vm.prank(strategist);
+        sizeMetaVault.rebalance(cashStrategyVault, erc4626StrategyVault, amount);
     }
 
     function test_SizeMetaVault_rebalance() public {
