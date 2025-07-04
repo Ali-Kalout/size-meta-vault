@@ -29,7 +29,7 @@ contract AaveStrategyVaultERC4626StdTest is ERC4626Test, BaseTest {
             uint256 gain = uint256(init.yield);
             IMockERC20(_underlying_).mint(address(aToken), gain);
             vm.prank(admin);
-            pool.setLiquidityIndex(address(erc20Asset), (balance + gain) * WadRayMath.RAY / balance);
+            pool.setLiquidityIndex(address(erc20Asset), ((balance + gain) * WadRayMath.RAY) / balance);
         } else {
             // loss
             vm.assume(init.yield > type(int128).min);
