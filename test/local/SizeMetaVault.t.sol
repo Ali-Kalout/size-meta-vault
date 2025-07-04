@@ -43,15 +43,24 @@ contract SizeMetaVaultTest is BaseTest {
 
         uint256 amount = 5e6;
 
+        //validate strategyFrom
         vm.prank(strategist);
         vm.expectRevert(abi.encodeWithSelector(SizeMetaVault.InvalidStrategy.selector,address(1)));
         sizeMetaVault.rebalance(IStrategy(address(1)), erc4626StrategyVault, amount);
-
+        
+        //validate strategyTo
         vm.prank(strategist);
         vm.expectRevert(abi.encodeWithSelector(SizeMetaVault.InvalidStrategy.selector,address(1)));
         sizeMetaVault.rebalance(cashStrategyVault, IStrategy(address(1)), amount);
 
+        //validate amount 0
+        vm.expectRevert(abi.encodeWithSelector(SizeMetaVault.NULL_AMOUNT.selector));
+        vm.prank(strategist);
+        sizeMetaVault.rebalance(cashStrategyVault, erc4626StrategyVault, 0);
+
+        //validate amount > balance
         amount = 50e6;
+        assertLt(cashAssetsBefore, amount);
         vm.expectRevert(
             abi.encodeWithSelector(
                 SizeMetaVault.InsufficientAssets.selector, cashAssetsBefore, cashStrategyDeadAssets, amount
