@@ -42,6 +42,8 @@ contract SizeMetaVault is BaseVault {
     error CannotDepositToStrategies(uint256 assets, uint256 shares, uint256 remainingAssets);
     error CannotWithdrawFromStrategies(uint256 assets, uint256 shares, uint256 missingAssets);
     error InsufficientAssets(uint256 totalAssets, uint256 deadAssets, uint256 amount);
+    error NULL_ADDRESS();
+    error NULL_AMOUNT();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR / INITIALIZER
@@ -200,12 +202,18 @@ contract SizeMetaVault is BaseVault {
     /// @notice Adds a new strategy to the vault
     /// @dev Only callable by addresses with STRATEGIST_ROLE
     function addStrategy(address strategy) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
+        if (address(strategy) == address(0)) {
+            revert NULL_ADDRESS();
+        }
         _addStrategy(strategy);
     }
 
     /// @notice Removes a strategy from the vault
     /// @dev Only callable by addresses with STRATEGIST_ROLE
     function removeStrategy(address strategy) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
+        if (address(strategy) == address(0)) {
+            revert NULL_ADDRESS();
+        }
         _removeStrategy(strategy);
     }
 
@@ -216,6 +224,9 @@ contract SizeMetaVault is BaseVault {
         whenNotPaused
         onlyAuth(STRATEGIST_ROLE)
     {
+        if(amount == 0) {
+            revert NULL_AMOUNT();
+        }
         if (!strategies.contains(address(strategyFrom))) {
             revert InvalidStrategy(address(strategyFrom));
         }
