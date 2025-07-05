@@ -25,6 +25,12 @@ contract SizeMetaVaultTest is BaseTest {
         vm.expectRevert(abi.encodeWithSelector(SizeMetaVault.Returned_lessThan_minAmount.selector));
         vm.prank(strategist);
         sizeMetaVault.rebalance(cashStrategyVault, erc4626StrategyVault, amount, 31e6);
+    }
+
+    function test_SizeMetaVault_RebalanceSlippageWorks() public {
+        uint256 amount = 30e6;
+
+        _mint(erc20Asset, address(cashStrategyVault), 40e6);
 
         vm.prank(strategist);
         sizeMetaVault.rebalance(cashStrategyVault, erc4626StrategyVault, amount, 30e6);
