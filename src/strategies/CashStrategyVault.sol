@@ -21,12 +21,15 @@ contract CashStrategyVault is BaseVault, IStrategy {
 
     /// @notice Transfers assets from this strategy to another address
     /// @dev Only callable by addresses with SIZE_VAULT_ROLE (typically the meta vault)
-    function transferAssets(address to, uint256 assets)
+    function transferAssets(
+        address to,
+        uint256 assets
+    )
         external
         override
+        nonReentrant
         notPaused
         onlyAuth(SIZE_VAULT_ROLE)
-        nonReentrant
     {
         IERC20(asset()).safeTransfer(to, assets);
         emit TransferAssets(to, assets);
@@ -38,6 +41,7 @@ contract CashStrategyVault is BaseVault, IStrategy {
 
     /// @notice Skims idle assets (no-op for cash strategy)
     /// @dev Since this is a cash strategy, there are no assets to invest, so this just emits an event
+    // aderyn-ignore-next-line(non-reentrant-is-not-before-others)
     function skim() external override notPaused nonReentrant {
         emit Skim();
     }

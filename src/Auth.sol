@@ -15,7 +15,12 @@ bytes32 constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 /// @custom:security-contact security@size.credit
 /// @author Size (https://size.credit/)
 /// @notice Authority acccess control contract with global pause functionality for the Size Meta Vault system
-contract Auth is UUPSUpgradeable, AccessControlUpgradeable, PausableUpgradeable, MulticallUpgradeable {
+contract Auth is
+    UUPSUpgradeable,
+    AccessControlUpgradeable,
+    PausableUpgradeable,
+    MulticallUpgradeable
+{
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -23,6 +28,7 @@ contract Auth is UUPSUpgradeable, AccessControlUpgradeable, PausableUpgradeable,
 
     /// @notice Initializes the Auth contract with an admin address
     /// @dev Grants all necessary roles to the admin address
+    // aderyn-ignore-next-line(useless-public-function)
     function initialize(address admin_) public initializer {
         __AccessControl_init();
         __Pausable_init();
@@ -36,16 +42,25 @@ contract Auth is UUPSUpgradeable, AccessControlUpgradeable, PausableUpgradeable,
 
     /// @notice Authorizes contract upgrades
     /// @dev Only addresses with DEFAULT_ADMIN_ROLE can authorize upgrades
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
+    // aderyn-ignore-next-line(empty-block)
+    function _authorizeUpgrade(
+        address newImplementation
+    )
+        internal
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE) // aderyn-ignore(centralization-risk)
+    {}
 
     /// @notice Pauses the contract
     /// @dev Only addresses with PAUSER_ROLE can pause the contract
+    // aderyn-ignore-next-line(centralization-risk)
     function pause() external onlyRole(PAUSER_ROLE) {
         _pause();
     }
 
     /// @notice Unpauses the contract
     /// @dev Only addresses with PAUSER_ROLE can unpause the contract
+    // aderyn-ignore-next-line(centralization-risk)
     function unpause() external onlyRole(PAUSER_ROLE) {
         _unpause();
     }

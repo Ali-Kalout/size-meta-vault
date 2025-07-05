@@ -12,6 +12,8 @@ interface IStrategy is IERC4626 {
     /// @notice Emitted when assets are transferred from this strategy to another address
     /// @param to The recipient address of the transferred assets
     /// @param amount The amount of assets transferred
+
+    // aderyn-ignore-next-line
     event TransferAssets(address indexed to, uint256 amount);
 
     /// @notice Emitted when the strategy skims idle assets and invests them

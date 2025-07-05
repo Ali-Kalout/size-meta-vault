@@ -32,11 +32,16 @@ contract AaveStrategyVault is BaseVault, IStrategy {
                             CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    uint256 internal constant DECIMALS_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FFFFFFFFFFFF;
-    uint256 internal constant ACTIVE_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFF;
-    uint256 internal constant FROZEN_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFFFFFFFFFFFFFF;
-    uint256 internal constant PAUSED_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFF;
-    uint256 internal constant SUPPLY_CAP_MASK = 0xFFFFFFFFFFFFFFFFFFFFFFFFFF000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+    uint256 internal constant DECIMALS_MASK =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00FFFFFFFFFFFF;
+    uint256 internal constant ACTIVE_MASK =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFF;
+    uint256 internal constant FROZEN_MASK =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDFFFFFFFFFFFFFF;
+    uint256 internal constant PAUSED_MASK =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFF;
+    uint256 internal constant SUPPLY_CAP_MASK =
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFF000000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     uint256 internal constant SUPPLY_CAP_START_BIT_POSITION = 116;
     uint256 internal constant RESERVE_DECIMALS_START_BIT_POSITION = 48;
@@ -61,7 +66,7 @@ contract AaveStrategyVault is BaseVault, IStrategy {
         string memory symbol_,
         uint256 firstDepositAmount,
         IPool pool_
-    ) public virtual initializer {
+    ) external virtual initializer {
         if (address(pool_) == address(0)) {
             revert NullAddress();
         }
@@ -81,13 +86,10 @@ contract AaveStrategyVault is BaseVault, IStrategy {
 
     /// @notice Transfers assets from this strategy to another address
     /// @dev Withdraws from Aave pool and transfers to the recipient
-    function transferAssets(address to, uint256 amount)
-        external
-        override
-        notPaused
-        onlyAuth(SIZE_VAULT_ROLE)
-        nonReentrant
-    {
+    function transferAssets(
+        address to,
+        uint256 amount
+    ) external override nonReentrant notPaused onlyAuth(SIZE_VAULT_ROLE) {
         pool.withdraw(asset(), amount, to);
         emit TransferAssets(to, amount);
     }
@@ -98,7 +100,13 @@ contract AaveStrategyVault is BaseVault, IStrategy {
 
     /// @notice Invests any idle assets sitting in this contract
     /// @dev Supplies any assets held by this contract to the Aave pool
-    function skim() external override notPaused onlyAuth(SIZE_VAULT_ROLE) nonReentrant {
+    function skim()
+        external
+        override
+        nonReentrant
+        notPaused
+        onlyAuth(SIZE_VAULT_ROLE)
+    {
         uint256 assets = IERC20(asset()).balanceOf(address(this));
         IERC20(asset()).forceApprove(address(pool), assets);
         pool.supply(asset(), assets, address(this), 0);
@@ -112,10 +120,16 @@ contract AaveStrategyVault is BaseVault, IStrategy {
     /// @notice Returns the maximum amount that can be deposited
     /// @dev Checks Aave reserve configuration and supply cap to determine max deposit
     /// @return The maximum deposit amount allowed by Aave
-    function maxDeposit(address) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+    function maxDeposit(
+        address
+    ) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
         // check if asset is paused
         uint256 configData = pool.getReserveData(asset()).configuration.data;
-        if (!(_getActive(configData) && !_getFrozen(configData) && !_getPaused(configData))) {
+        if (
+            !(_getActive(configData) &&
+                !_getFrozen(configData) &&
+                !_getPaused(configData))
+        ) {
             return 0;
         }
 
@@ -133,13 +147,19 @@ contract AaveStrategyVault is BaseVault, IStrategy {
 
     /// @notice Returns the maximum number of shares that can be minted
     /// @dev Converts the max deposit amount to shares
-    function maxMint(address receiver) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+    // aderyn-ignore-next-line(useless-public-function)
+    function maxMint(
+        address receiver
+    ) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
         return convertToShares(maxDeposit(receiver));
     }
 
     /// @notice Returns the maximum amount that can be withdrawn by an owner
     /// @dev Limited by both owner's balance and Aave pool liquidity
-    function maxWithdraw(address owner) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+    // aderyn-ignore-next-line(useless-public-function)
+    function maxWithdraw(
+        address owner
+    ) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
         // check if asset is paused
         uint256 configData = pool.getReserveData(asset()).configuration.data;
         if (!(_getActive(configData) && !_getPaused(configData))) {
@@ -153,7 +173,10 @@ contract AaveStrategyVault is BaseVault, IStrategy {
 
     /// @notice Returns the maximum number of shares that can be redeemed
     /// @dev Limited by both owner's balance and Aave pool liquidity
-    function maxRedeem(address owner) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+    // aderyn-ignore-next-line(useless-public-function)
+    function maxRedeem(
+        address owner
+    ) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
         // check if asset is paused
         uint256 configData = pool.getReserveData(asset()).configuration.data;
         if (!(_getActive(configData) && !_getPaused(configData))) {
@@ -168,14 +191,26 @@ contract AaveStrategyVault is BaseVault, IStrategy {
 
     /// @notice Returns the total assets managed by this strategy
     /// @dev Returns the aToken balance since aTokens represent the underlying asset with accrued interest
-    function totalAssets() public view virtual override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+    // aderyn-ignore-next-line(useless-public-function)
+    function totalAssets()
+        public
+        view
+        virtual
+        override(ERC4626Upgradeable, IERC4626)
+        returns (uint256)
+    {
         /// @notice aTokens use rebasing to accrue interest, so the total assets is just the aToken balance
         return aToken.balanceOf(address(this));
     }
 
     /// @notice Internal deposit function that supplies assets to Aave
     /// @dev Calls parent deposit then supplies the assets to the Aave pool
-    function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal override {
+    function _deposit(
+        address caller,
+        address receiver,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
         super._deposit(caller, receiver, assets, shares);
         IERC20(asset()).forceApprove(address(pool), assets);
         pool.supply(asset(), assets, address(this), 0);
@@ -183,10 +218,13 @@ contract AaveStrategyVault is BaseVault, IStrategy {
 
     /// @notice Internal withdraw function that withdraws from Aave
     /// @dev Withdraws from the Aave pool then calls parent withdraw
-    function _withdraw(address caller, address receiver, address owner, uint256 assets, uint256 shares)
-        internal
-        override
-    {
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
         pool.withdraw(asset(), assets, address(this));
         super._withdraw(caller, receiver, owner, assets, shares);
     }
@@ -198,7 +236,11 @@ contract AaveStrategyVault is BaseVault, IStrategy {
     /// @notice Extracts the decimals from Aave reserve configuration data
     /// @dev Uses bit manipulation to extract decimals from the configuration
     function _getDecimals(uint256 configData) internal pure returns (uint8) {
-        return uint8((configData & ~DECIMALS_MASK) >> RESERVE_DECIMALS_START_BIT_POSITION);
+        return
+            uint8(
+                (configData & ~DECIMALS_MASK) >>
+                    RESERVE_DECIMALS_START_BIT_POSITION
+            );
     }
 
     /// @notice Checks if the Aave reserve is active
