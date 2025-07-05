@@ -42,6 +42,7 @@ contract SizeMetaVault is BaseVault {
     error CannotDepositToStrategies(uint256 assets, uint256 shares, uint256 remainingAssets);
     error CannotWithdrawFromStrategies(uint256 assets, uint256 shares, uint256 missingAssets);
     error InsufficientAssets(uint256 totalAssets, uint256 deadAssets, uint256 amount);
+    error Returned_lessThan_minAmount();
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR / INITIALIZER
@@ -211,7 +212,7 @@ contract SizeMetaVault is BaseVault {
 
     /// @notice Rebalances assets between two strategies
     /// @dev Transfers assets from one strategy to another and skims the destination
-    function rebalance(IStrategy strategyFrom, IStrategy strategyTo, uint256 amount)
+    function rebalance(IStrategy strategyFrom, IStrategy strategyTo, uint256 amount, uint256 minAmount)
         external
         whenNotPaused
         onlyAuth(STRATEGIST_ROLE)
@@ -226,8 +227,13 @@ contract SizeMetaVault is BaseVault {
             revert InsufficientAssets(strategyFrom.totalAssets(), BaseVault(address(strategyFrom)).deadAssets(), amount);
         }
 
+        uint256 totalAssetBefore = strategyTo.totalAssets();
         strategyFrom.transferAssets(address(strategyTo), amount);
         strategyTo.skim();
+        uint256 totalAssetAfter = strategyTo.totalAssets();
+        if (minAmount > totalAssetAfter - totalAssetBefore) {
+            revert Returned_lessThan_minAmount();
+        }
 
         emit Rebalance(address(strategyFrom), address(strategyTo), amount);
     }
