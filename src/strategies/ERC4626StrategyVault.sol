@@ -60,10 +60,13 @@ contract ERC4626StrategyVault is BaseVault, IStrategy {
 
     /// @notice Transfers assets from this strategy to another address
     /// @dev Withdraws from the external vault and transfers to the recipient
-    function transferAssets(
-        address to,
-        uint256 assets
-    ) external override nonReentrant notPaused onlyAuth(SIZE_VAULT_ROLE) {
+    function transferAssets(address to, uint256 assets)
+        external
+        override
+        nonReentrant
+        notPaused
+        onlyAuth(SIZE_VAULT_ROLE)
+    {
         vault.withdraw(assets, to, address(this));
         emit TransferAssets(to, assets);
     }
@@ -74,13 +77,7 @@ contract ERC4626StrategyVault is BaseVault, IStrategy {
 
     /// @notice Invests any idle assets sitting in this contract
     /// @dev Deposits any assets held by this contract into the external vault
-    function skim()
-        external
-        override
-        nonReentrant
-        notPaused
-        onlyAuth(SIZE_VAULT_ROLE)
-    {
+    function skim() external override nonReentrant notPaused onlyAuth(SIZE_VAULT_ROLE) {
         uint256 assets = IERC20(asset()).balanceOf(address(this));
         IERC20(asset()).forceApprove(address(vault), assets);
         vault.deposit(assets, address(this));
@@ -94,72 +91,42 @@ contract ERC4626StrategyVault is BaseVault, IStrategy {
     /// @notice Returns the maximum amount that can be deposited
     /// @dev Delegates to the external vault's maxDeposit function
     // aderyn-ignore-next-line(useless-public-function)
-    function maxDeposit(
-        address
-    ) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+    function maxDeposit(address) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
         return vault.maxDeposit(address(this));
     }
 
     /// @notice Returns the maximum number of shares that can be minted
     /// @dev Delegates to the external vault's maxMint function
     // aderyn-ignore-next-line(useless-public-function)
-    function maxMint(
-        address
-    ) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+    function maxMint(address) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
         return vault.maxMint(address(this));
     }
 
     /// @notice Returns the maximum amount that can be withdrawn by an owner
     /// @dev Limited by both owner's balance and external vault's withdrawal capacity
     // aderyn-ignore-next-line(useless-public-function)
-    function maxWithdraw(
-        address owner
-    ) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
-        return
-            Math.min(
-                _convertToAssets(balanceOf(owner), Math.Rounding.Floor),
-                vault.maxWithdraw(address(this))
-            );
+    function maxWithdraw(address owner) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+        return Math.min(_convertToAssets(balanceOf(owner), Math.Rounding.Floor), vault.maxWithdraw(address(this)));
     }
 
     /// @notice Returns the maximum number of shares that can be redeemed
     /// @dev Limited by both owner's balance and external vault's redemption capacity
     // aderyn-ignore-next-line(useless-public-function)
-    function maxRedeem(
-        address owner
-    ) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
-        return
-            Math.min(
-                balanceOf(owner),
-                _convertToShares(
-                    vault.maxWithdraw(address(this)),
-                    Math.Rounding.Floor
-                )
-            );
+    function maxRedeem(address owner) public view override(ERC4626Upgradeable, IERC4626) returns (uint256) {
+        return Math.min(balanceOf(owner), _convertToShares(vault.maxWithdraw(address(this)), Math.Rounding.Floor));
     }
 
     /// @notice Returns the total assets managed by this strategy
     /// @dev Converts the external vault shares held by this contract to asset value
     /// @return The total assets under management
     // aderyn-ignore-next-line(useless-public-function)
-    function totalAssets()
-        public
-        view
-        virtual
-        override(ERC4626Upgradeable, IERC4626)
-        returns (uint256)
-    {
+    function totalAssets() public view virtual override(ERC4626Upgradeable, IERC4626) returns (uint256) {
         return vault.convertToAssets(vault.balanceOf(address(this)));
     }
 
     /// @notice Internal deposit function that invests in the external vault
     /// @dev Calls parent deposit then invests the assets in the external vault
-    function _deposit(
-        address caller,
-        address receiver,
-        uint256 assets,
-        uint256 shares
-    ) internal override {
+    function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal override {
         super._deposit(caller, receiver, assets, shares);
         IERC20(asset()).forceApprove(address(vault), assets);
         vault.deposit(assets, address(this));
@@ -167,13 +134,10 @@ contract ERC4626StrategyVault is BaseVault, IStrategy {
 
     /// @notice Internal withdraw function that redeems from the external vault
     /// @dev Withdraws from the external vault then calls parent withdraw
-    function _withdraw(
-        address caller,
-        address receiver,
-        address owner,
-        uint256 assets,
-        uint256 shares
-    ) internal override {
+    function _withdraw(address caller, address receiver, address owner, uint256 assets, uint256 shares)
+        internal
+        override
+    {
         vault.withdraw(assets, address(this), address(this));
         super._withdraw(caller, receiver, owner, assets, shares);
     }

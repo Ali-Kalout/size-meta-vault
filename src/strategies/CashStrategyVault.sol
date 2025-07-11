@@ -21,10 +21,7 @@ contract CashStrategyVault is BaseVault, IStrategy {
 
     /// @notice Transfers assets from this strategy to another address
     /// @dev Only callable by addresses with SIZE_VAULT_ROLE (typically the meta vault)
-    function transferAssets(
-        address to,
-        uint256 assets
-    )
+    function transferAssets(address to, uint256 assets)
         external
         override
         nonReentrant

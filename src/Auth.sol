@@ -15,12 +15,7 @@ bytes32 constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 /// @custom:security-contact security@size.credit
 /// @author Size (https://size.credit/)
 /// @notice Authority acccess control contract with global pause functionality for the Size Meta Vault system
-contract Auth is
-    UUPSUpgradeable,
-    AccessControlUpgradeable,
-    PausableUpgradeable,
-    MulticallUpgradeable
-{
+contract Auth is UUPSUpgradeable, AccessControlUpgradeable, PausableUpgradeable, MulticallUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -43,9 +38,7 @@ contract Auth is
     /// @notice Authorizes contract upgrades
     /// @dev Only addresses with DEFAULT_ADMIN_ROLE can authorize upgrades
     // aderyn-ignore-next-line(empty-block)
-    function _authorizeUpgrade(
-        address newImplementation
-    )
+    function _authorizeUpgrade(address newImplementation)
         internal
         override
         onlyRole(DEFAULT_ADMIN_ROLE) // aderyn-ignore(centralization-risk)

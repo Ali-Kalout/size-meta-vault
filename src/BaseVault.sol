@@ -5,7 +5,8 @@ import {ERC4626Upgradeable} from "@openzeppelin-upgradeable/contracts/token/ERC2
 import {UUPSUpgradeable} from "@openzeppelin-upgradeable/contracts/proxy/utils/UUPSUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin-upgradeable/contracts/utils/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin-upgradeable/contracts/utils/PausableUpgradeable.sol";
-import {ERC20PermitUpgradeable} from "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
+import {ERC20PermitUpgradeable} from
+    "@openzeppelin-upgradeable/contracts/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {MulticallUpgradeable} from "@openzeppelin-upgradeable/contracts/utils/MulticallUpgradeable.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
@@ -100,10 +101,7 @@ abstract contract BaseVault is
     /// @dev Reverts if the caller doesn't have the required role
     modifier onlyAuth(bytes32 role) {
         if (!auth.hasRole(role, msg.sender)) {
-            revert IAccessControl.AccessControlUnauthorizedAccount(
-                msg.sender,
-                role
-            );
+            revert IAccessControl.AccessControlUnauthorizedAccount(msg.sender, role);
         }
         _;
     }
@@ -122,9 +120,7 @@ abstract contract BaseVault is
     /// @notice Authorizes contract upgrades
     /// @dev Only addresses with DEFAULT_ADMIN_ROLE can authorize upgrades
     // aderyn-ignore-next-line(empty-block)
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal override onlyAuth(DEFAULT_ADMIN_ROLE) {}
+    function _authorizeUpgrade(address newImplementation) internal override onlyAuth(DEFAULT_ADMIN_ROLE) {}
 
     /// @notice Pauses the vault
     /// @dev Only addresses with PAUSER_ROLE can pause the vault
@@ -141,24 +137,14 @@ abstract contract BaseVault is
     /// @notice Returns the number of decimals for the vault token
     /// @dev Overrides both ERC20 and ERC4626 decimals functions
     /// @return The number of decimals (matches the underlying asset)
-    function decimals()
-        public
-        view
-        virtual
-        override(ERC20Upgradeable, ERC4626Upgradeable)
-        returns (uint8)
-    {
+    function decimals() public view virtual override(ERC20Upgradeable, ERC4626Upgradeable) returns (uint8) {
         return super.decimals();
     }
 
     /// @notice Internal function called during token transfers
     /// @dev Ensures transfers only happen when the contract is not paused and that no reentrancy is possible
 
-    function _update(
-        address from,
-        address to,
-        uint256 value
-    ) internal override nonReentrant notPaused {
+    function _update(address from, address to, uint256 value) internal override nonReentrant notPaused {
         super._update(from, to, value);
     }
 }

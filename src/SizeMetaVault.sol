@@ -33,32 +33,16 @@ contract SizeMetaVault is BaseVault {
     event StrategyAdded(address indexed strategy);
     event StrategyRemoved(address indexed strategy);
     // aderyn-ignore-next-line
-    event Rebalance(
-        address indexed strategyFrom,
-        address indexed strategyTo,
-        uint256 amount
-    );
+    event Rebalance(address indexed strategyFrom, address indexed strategyTo, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                               ERRORS
     //////////////////////////////////////////////////////////////*/
 
     error InvalidStrategy(address strategy);
-    error CannotDepositToStrategies(
-        uint256 assets,
-        uint256 shares,
-        uint256 remainingAssets
-    );
-    error CannotWithdrawFromStrategies(
-        uint256 assets,
-        uint256 shares,
-        uint256 missingAssets
-    );
-    error InsufficientAssets(
-        uint256 totalAssets,
-        uint256 deadAssets,
-        uint256 amount
-    );
+    error CannotDepositToStrategies(uint256 assets, uint256 shares, uint256 remainingAssets);
+    error CannotWithdrawFromStrategies(uint256 assets, uint256 shares, uint256 missingAssets);
+    error InsufficientAssets(uint256 totalAssets, uint256 deadAssets, uint256 amount);
 
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR / INITIALIZER
@@ -107,32 +91,21 @@ contract SizeMetaVault is BaseVault {
     // aderyn-ignore-next-line(useless-public-function)
     function maxMint(address receiver) public view override returns (uint256) {
         uint256 maxDepositAmount = maxDeposit(receiver);
-        return
-            maxDepositAmount == type(uint256).max
-                ? type(uint256).max
-                : convertToShares(maxDepositAmount);
+        return maxDepositAmount == type(uint256).max ? type(uint256).max : convertToShares(maxDepositAmount);
     }
 
     /// @notice Returns the maximum amount that can be withdrawn by an owner
     /// @dev Limited by both owner's balance and total withdrawable assets
     // aderyn-ignore-next-line(useless-public-function)
     function maxWithdraw(address owner) public view override returns (uint256) {
-        return
-            Math.min(
-                _convertToAssets(balanceOf(owner), Math.Rounding.Floor),
-                _maxWithdraw()
-            );
+        return Math.min(_convertToAssets(balanceOf(owner), Math.Rounding.Floor), _maxWithdraw());
     }
 
     /// @notice Returns the maximum number of shares that can be redeemed
     /// @dev Limited by both owner's balance and total withdrawable assets
     // aderyn-ignore-next-line(useless-public-function)
     function maxRedeem(address owner) public view override returns (uint256) {
-        return
-            Math.min(
-                balanceOf(owner),
-                _convertToShares(_maxWithdraw(), Math.Rounding.Floor)
-            );
+        return Math.min(balanceOf(owner), _convertToShares(_maxWithdraw(), Math.Rounding.Floor));
     }
 
     /// @notice Returns the total assets managed by the vault
@@ -151,12 +124,7 @@ contract SizeMetaVault is BaseVault {
 
     /// @notice Deposits assets to strategies in order
     /// @dev Tries to deposit to strategies sequentially, reverts if not all assets can be deposited
-    function _deposit(
-        address caller,
-        address receiver,
-        uint256 assets,
-        uint256 shares
-    ) internal override {
+    function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal override {
         if (_isInitializing()) {
             // first deposit
             shares = assets;
@@ -171,10 +139,7 @@ contract SizeMetaVault is BaseVault {
             IStrategy strategy = IStrategy(strategies.at(i));
 
             uint256 strategyMaxDeposit = strategy.maxDeposit(address(this));
-            uint256 depositAmount = Math.min(
-                assetsToDeposit,
-                strategyMaxDeposit
-            );
+            uint256 depositAmount = Math.min(assetsToDeposit, strategyMaxDeposit);
             IERC20(asset()).forceApprove(address(strategy), depositAmount);
             try strategy.deposit(depositAmount, address(this)) {
                 assetsToDeposit -= depositAmount;
@@ -193,13 +158,10 @@ contract SizeMetaVault is BaseVault {
 
     /// @notice Withdraws assets from strategies in order
     /// @dev Tries to withdraw from strategies sequentially, reverts if not enough assets available
-    function _withdraw(
-        address caller,
-        address receiver,
-        address owner,
-        uint256 assets,
-        uint256 shares
-    ) internal override {
+    function _withdraw(address caller, address receiver, address owner, uint256 assets, uint256 shares)
+        internal
+        override
+    {
         uint256 assetsToWithdraw = assets;
 
         uint256 length = strategies.length();
@@ -208,13 +170,8 @@ contract SizeMetaVault is BaseVault {
             IStrategy strategy = IStrategy(strategies.at(i));
 
             uint256 strategyMaxWithdraw = strategy.maxWithdraw(address(this));
-            uint256 withdrawAmount = Math.min(
-                assetsToWithdraw,
-                strategyMaxWithdraw
-            );
-            try
-                strategy.withdraw(withdrawAmount, address(this), address(this))
-            {
+            uint256 withdrawAmount = Math.min(assetsToWithdraw, strategyMaxWithdraw);
+            try strategy.withdraw(withdrawAmount, address(this), address(this)) {
                 assetsToWithdraw -= withdrawAmount;
             } catch {}
 
@@ -223,11 +180,7 @@ contract SizeMetaVault is BaseVault {
             }
         }
         if (assetsToWithdraw > 0) {
-            revert CannotWithdrawFromStrategies(
-                assets,
-                shares,
-                assetsToWithdraw
-            );
+            revert CannotWithdrawFromStrategies(assets, shares, assetsToWithdraw);
         }
 
         super._withdraw(caller, receiver, owner, assets, shares);
@@ -239,9 +192,7 @@ contract SizeMetaVault is BaseVault {
 
     /// @notice Replaces all current strategies with new ones
     /// @dev Removes all existing strategies and adds the new ones
-    function setStrategies(
-        address[] calldata strategies_
-    ) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
+    function setStrategies(address[] calldata strategies_) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
         uint256 length = strategies.length();
         for (uint256 i = 0; i < length; i++) {
             _removeStrategy(strategies.at(i));
@@ -253,42 +204,31 @@ contract SizeMetaVault is BaseVault {
 
     /// @notice Adds a new strategy to the vault
     /// @dev Only callable by addresses with STRATEGIST_ROLE
-    function addStrategy(
-        address strategy
-    ) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
+    function addStrategy(address strategy) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
         _addStrategy(strategy);
     }
 
     /// @notice Removes a strategy from the vault
     /// @dev Only callable by addresses with STRATEGIST_ROLE
-    function removeStrategy(
-        address strategy
-    ) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
+    function removeStrategy(address strategy) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
         _removeStrategy(strategy);
     }
 
     /// @notice Rebalances assets between two strategies
     /// @dev Transfers assets from one strategy to another and skims the destination
-    function rebalance(
-        IStrategy strategyFrom,
-        IStrategy strategyTo,
-        uint256 amount
-    ) external whenNotPaused onlyAuth(STRATEGIST_ROLE) {
+    function rebalance(IStrategy strategyFrom, IStrategy strategyTo, uint256 amount)
+        external
+        whenNotPaused
+        onlyAuth(STRATEGIST_ROLE)
+    {
         if (!strategies.contains(address(strategyFrom))) {
             revert InvalidStrategy(address(strategyFrom));
         }
         if (!strategies.contains(address(strategyTo))) {
             revert InvalidStrategy(address(strategyTo));
         }
-        if (
-            amount + BaseVault(address(strategyFrom)).deadAssets() >
-            strategyFrom.totalAssets()
-        ) {
-            revert InsufficientAssets(
-                strategyFrom.totalAssets(),
-                BaseVault(address(strategyFrom)).deadAssets(),
-                amount
-            );
+        if (amount + BaseVault(address(strategyFrom)).deadAssets() > strategyFrom.totalAssets()) {
+            revert InsufficientAssets(strategyFrom.totalAssets(), BaseVault(address(strategyFrom)).deadAssets(), amount);
         }
 
         strategyFrom.transferAssets(address(strategyTo), amount);
